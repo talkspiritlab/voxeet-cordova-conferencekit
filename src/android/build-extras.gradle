@@ -1,5 +1,17 @@
+android {
+    defaultConfig {
+        multiDexEnabled true
+    }
+
+    dexOptions {
+        jumboMode true
+        incremental true
+        javaMaxHeapSize "4g"
+    }
+}
 dependencies {
     compile ('com.voxeet.sdk:toolkit:1.0.2') {
         transitive = true
     }
+    compile 'com.android.support:multidex:1.0.1'
 }
