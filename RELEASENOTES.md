@@ -1,5 +1,32 @@
 # Release Notes
 
+### 1.0.15 (October 3rd, 2018)
+  - add auto close incoming close incoming call (default 40s)
+
+### 1.0.14 (October 3rd, 2018)
+  - add notification channel management into SDK
+
+### 1.0.13 (October 1st, 2018)
+  - add methods and logic to automatically manage the anti native workflow
+
+### 1.0.12 (September 28th, 2018)
+  - fix missing call to the FCM Controller to enable push/log
+
+### 1.0.11 (September 21th, 2018)
+  - add unlock keyguard
+
+### 1.0.10 (September 20th, 2018)
+  - fix the multiple view in Android (config.xml => `<preference name="AndroidLaunchMode" value="singleInstance" />`)
+
+### 1.0.9 (September 19th, 2018)
+  - upgrade Android package with fewer dependencies and fix a possible multiple conference views (with black overlays)
+
+### 1.0.8 (September 18th, 2018)
+  - fix NPE in Android preventing FCM functionnality (1.1.8.7)
+
+### 1.0.7 (September 18th, 2018)
+  - upgrade the Android SDK version to 1.1.8.6
+
 ### 1.0.6 (July 27th, 2018)
   - add broadcast messages support for android
 

@@ -6,12 +6,14 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.voxeet.android.media.Media;
+import com.voxeet.android.media.audio.AudioRoute;
+import com.voxeet.toolkit.notification.CordovaIncomingBundleChecker;
 import com.voxeet.toolkit.notification.CordovaIncomingCallActivity;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PluginResult;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -28,6 +30,7 @@ import eu.codlab.simplepromise.solve.PromiseExec;
 import eu.codlab.simplepromise.solve.Solver;
 import sdk.voxeet.com.toolkit.main.VoxeetToolkit;
 import sdk.voxeet.com.toolkit.views.uitookit.sdk.overlays.OverlayState;
+import voxeet.com.sdk.core.FirebaseController;
 import voxeet.com.sdk.core.VoxeetSdk;
 import voxeet.com.sdk.core.preferences.VoxeetPreferences;
 import voxeet.com.sdk.events.success.ConferenceRefreshedEvent;
@@ -40,6 +43,9 @@ import voxeet.com.sdk.json.UserInfo;
  */
 
 public class VoxeetCordova extends CordovaPlugin {
+
+    private static final String ERROR_SDK_NOT_INITIALIZED = "ERROR_SDK_NOT_INITIALIZED";
+    private static final String ERROR_SDK_NOT_LOGGED_IN = "ERROR_SDK_NOT_LOGGED_IN";
 
     private final Handler mHandler;
     private UserInfo _current_user;
@@ -88,6 +94,12 @@ public class VoxeetCordova extends CordovaPlugin {
                 case "closeSession":
                     closeSession(callbackContext);
                     break;
+                case "isUserLoggedIn":
+                    isUserLoggedIn(callbackContext);
+                    break;
+                case "checkForAwaitingConference":
+                    checkForAwaitingConference(callbackContext);
+                    break;
                 case "startConference":
                     try {
                         String confId = args.getString(0);
@@ -105,7 +117,7 @@ public class VoxeetCordova extends CordovaPlugin {
                                         object.getString("externalId"),
                                         object.getString("avatarUrl")));
 
-                                index ++;
+                                index++;
                             }
                         }
 
@@ -157,10 +169,19 @@ public class VoxeetCordova extends CordovaPlugin {
                     VoxeetSdk.getInstance().getConferenceService().setTimeOut(30 * 1000); //30s
                 }
 
-                VoxeetToolkit.initialize(application, EventBus.getDefault());
+                //also enable the push token upload and log
+                FirebaseController.getInstance()
+                        .log(true)
+                        .enable(true)
+                        .createNotificationChannel(application);
 
+                //reset the incoming call activity, in case the SDK was no initialized, it would have
+                //erased this method call
                 VoxeetPreferences.setDefaultActivity(CordovaIncomingCallActivity.class.getCanonicalName());
-                VoxeetToolkit.getInstance().enableOverlay(true);
+
+                VoxeetToolkit
+                        .initialize(application, EventBus.getDefault())
+                        .enableOverlay(true);
 
                 VoxeetSdk.getInstance().register(application, VoxeetCordova.this);
             }
@@ -238,6 +259,44 @@ public class VoxeetCordova extends CordovaPlugin {
                                 cb.error("Error while logging out with the server");
                             }
                         });
+            }
+        });
+    }
+
+    private void isUserLoggedIn(final CallbackContext cb) {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                boolean logged_in = false;
+                if (null != VoxeetSdk.getInstance()) {
+                    logged_in = VoxeetSdk.getInstance().isSocketOpen();
+                }
+
+                cb.sendPluginResult(new PluginResult(PluginResult.Status.OK, logged_in));
+            }
+        });
+    }
+
+    private void checkForAwaitingConference(final CallbackContext cb) {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (null == VoxeetSdk.getInstance()) {
+                    cb.error(ERROR_SDK_NOT_INITIALIZED);
+                } else {
+                    CordovaIncomingBundleChecker checker = CordovaIncomingCallActivity.CORDOVA_ROOT_BUNDLE;
+                    if (null != checker && checker.isBundleValid()) {
+                        if (VoxeetSdk.getInstance().isSocketOpen()) {
+                            checker.onAccept();
+                            CordovaIncomingCallActivity.CORDOVA_ROOT_BUNDLE = null;
+                            cb.success();
+                        } else {
+                            cb.error(ERROR_SDK_NOT_LOGGED_IN);
+                        }
+                    } else {
+                        cb.success();
+                    }
+                }
             }
         });
     }
@@ -346,8 +405,8 @@ public class VoxeetCordova extends CordovaPlugin {
     }
 
     private void defaultBuiltInSpeaker(final boolean enabled) {
-        Media.AudioRoute route = Media.AudioRoute.ROUTE_PHONE;
-        if (enabled) route = Media.AudioRoute.ROUTE_SPEAKER;
+        AudioRoute route = AudioRoute.ROUTE_PHONE;
+        if (enabled) route = AudioRoute.ROUTE_SPEAKER;
 
         VoxeetSdk.getInstance().getConferenceService()
                 .setAudioRoute(route);
@@ -363,6 +422,8 @@ public class VoxeetCordova extends CordovaPlugin {
         if (null != _log_in_callback) {
             _log_in_callback.success();
             _log_in_callback = null;
+
+            checkForIncomingConference();
         }
     }
 
@@ -375,6 +436,8 @@ public class VoxeetCordova extends CordovaPlugin {
                 if (null != _log_in_callback) {
                     _log_in_callback.error("Error while logging in");
                     _log_in_callback = null;
+
+                    cancelIncomingConference();
                 }
         }
     }
@@ -386,5 +449,23 @@ public class VoxeetCordova extends CordovaPlugin {
 
     private boolean isSameUser(@NonNull UserInfo userInfo) {
         return userInfo.getExternalId().equals(getCurrentUser());
+    }
+
+    private boolean checkForIncomingConference() {
+        CordovaIncomingBundleChecker checker = CordovaIncomingCallActivity.CORDOVA_ROOT_BUNDLE;
+        if (null != checker && checker.isBundleValid()) {
+            if (VoxeetSdk.getInstance().isSocketOpen()) {
+                checker.onAccept();
+                CordovaIncomingCallActivity.CORDOVA_ROOT_BUNDLE = null;
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void cancelIncomingConference() {
+        CordovaIncomingCallActivity.CORDOVA_ROOT_BUNDLE = null;
     }
 }

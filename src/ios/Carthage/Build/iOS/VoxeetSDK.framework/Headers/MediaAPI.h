@@ -7,35 +7,33 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "VoxeetMedia.h"
-#import "AudioSettings.h"
+#import <WebRTC/WebRTC.h>
 #import "SdpMessage.h"
 #import "SdpCandidates.h"
 #import "SdpDescription.h"
 #import "SenderNetworkStatistics.h"
 #import "ReceiverNetworkStatistics.h"
 #import "NetworkCodec.h"
-#import "VideoRenderer.h"
-#import "MediaStream.h"
 
 @protocol MediaAPIDelegate <NSObject>
-  - (void)streamAddedForPeer:(NSString *)peerId withStream:(MediaStream *)mediaStream;
-  - (void)streamRemovedForPeer:(NSString *)peerId withStream:(MediaStream *)mediaStream;
-  - (void)streamUpdatedForPeer:(NSString *) peerId withStream:(MediaStream *)mediaStream;
-  - (void)screenShareStreamAddedForPeer:(NSString *)peerId withStream:(MediaStream *)mediaStream;
-  - (void)screenShareStreamRemovedForPeer:(NSString *)peerId withStream:(MediaStream *)mediaStream;
+  - (void)sessionCreatedForPeer:(NSString *)peerId withType:(NSString *)type andSdp:(NSString *)sdp;
+  - (void)iceGatheringCompletedForPeer:(NSString *)peerId withCandidates:(NSArray<NSDictionary<NSString*, id>*> *)candidates;
+  - (void)streamAddedForPeer:(NSString *)peerId withStream:(RTCMediaStream *)mediaStream;
+  - (void)streamRemovedForPeer:(NSString *)peerId withStream:(RTCMediaStream *)mediaStream;
+  - (void)streamUpdatedForPeer:(NSString *) peerId withStream:(RTCMediaStream *)mediaStream;
+  - (void)screenShareStreamAddedForPeer:(NSString *)peerId withStream:(RTCMediaStream *)mediaStream;
+  - (void)screenShareStreamRemovedForPeer:(NSString *)peerId withStream:(RTCMediaStream *)mediaStream;
 @end
 
-@interface MediaAPI : NSObject <VoxeetMediaDelegate>
+@interface MediaAPI : NSObject <MediaEngineDelegate>
 
 @property (nonatomic, assign) id<MediaAPIDelegate> delegate;
 @property (strong, nonatomic) NSMutableDictionary *pendingOperations;
 @property (strong, nonatomic) SdpCandidates *peerCandidates;
-@property (strong, nonatomic) VoxeetMedia *wrapper;
-@property (strong, nonatomic) AudioSettings *audioSettings;
+@property (strong, nonatomic) MediaEngine *wrapper;
 @property (copy, nonatomic) void(^audioRouteChangedBlock)(NSNumber *);
 
-- (id)initWithLocalUser:(NSString *)localUserId settings:(AudioSettings *)audioSettings video:(BOOL)video microphone:(BOOL)microphone andCompletionBlock:(void(^)(void))completionBlock;
+- (id)initWithLocalPeer:(NSString *)localPeerId video:(BOOL)video microphone:(BOOL)microphone constraints: (NSDictionary<NSString*, NSString*>*)constraints;
 - (void)stop;
 - (void)setHardwareAEC:(BOOL)isHardwareAEC;
 - (BOOL)isHardwareAEC;
@@ -49,15 +47,21 @@
 - (void)changePeerPosition:(NSString *)peerId withAngle:(double)angle andDistance:(double)distance;
 - (void)changePeerPosition:(NSString *)peerId withAngle:(double)angle distance:(double)distance andGain:(float)gain;
 - (void)changeGain:(float)gain forPeer:(NSString *)peerId;
-- (void)attachMediaStream:(id<VideoRenderer>)renderer withStream:(MediaStream *)stream;
-- (void)unattachMediaStream:(id<VideoRenderer>)renderer withStream:(MediaStream *)stream;
-- (void)muteRecording;
-- (void)unmuteRecording;
+- (void)attachMediaStream:(id<RTCVideoRenderer>)renderer withStream:(RTCMediaStream *)stream;
+- (void)unattachMediaStream:(id<RTCVideoRenderer>)renderer withStream:(RTCMediaStream *)stream;
+- (RTCMediaStream*)getMediaStream:(NSString *)peerId;
+- (RTCMediaStream*)getScreenShareStream;
+- (void)setMute:(BOOL)mute;
+- (void)setPeerMute:(NSString *)peerId mute:(BOOL)mute;
 - (double)getLocalVuMeterLevel;
 - (double)getPeerVuMeterLevel:(NSString *)peerId;
 - (void)flipCamera;
 - (void)startVideo;
 - (void)stopVideo;
 - (void)resetAudioDevices;
+- (void)startScreenShare:(BOOL)broadcast;
+- (void)updateScreenshare:(CMSampleBufferRef)sampleBuffer;
+- (void)stopScreenShare;
+- (void)enable3DAudio:(BOOL)enable;
 
 @end
