@@ -166,7 +166,7 @@ public class VoxeetCordova extends CordovaPlugin {
                 if (null == VoxeetSdk.getInstance()) {
                     VoxeetSdk.initialize(application,
                             consumerKey, consumerSecret, null);
-                    VoxeetSdk.getInstance().getConferenceService().setTimeOut(30 * 1000); //30s
+                    VoxeetSdk.getInstance().getConferenceService().setTimeOut(5 * 60 * 1000); // 5 minutes
                 }
 
                 //also enable the push token upload and log
