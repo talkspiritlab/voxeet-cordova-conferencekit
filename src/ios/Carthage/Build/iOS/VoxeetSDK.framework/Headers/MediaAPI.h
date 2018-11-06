@@ -53,6 +53,7 @@
 - (RTCMediaStream*)getScreenShareStream;
 - (void)setMute:(BOOL)mute;
 - (void)setPeerMute:(NSString *)peerId mute:(BOOL)mute;
+- (NSString *)getLocalStats:(NSString *)peerId;
 - (double)getLocalVuMeterLevel;
 - (double)getPeerVuMeterLevel:(NSString *)peerId;
 - (void)flipCamera;

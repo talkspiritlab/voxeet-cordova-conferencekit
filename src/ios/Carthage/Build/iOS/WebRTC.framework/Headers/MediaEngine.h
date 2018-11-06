@@ -57,6 +57,7 @@ RTC_EXPORT
 - (void)setMute:(BOOL)mute;
 - (void)setPeerMute:(NSString *)peerId mute:(BOOL)mute;
 - (void)setAudioOptions:(BOOL)ns agc:(BOOL)agc ec:(BOOL)ec typingDetection:(BOOL)typingDetection;
+- (NSString *)getLocalStats:(NSString *)peerId;
 - (double)getLocalVuMeter;
 - (double)getVuMeterForPeer:(NSString *)peerId;
 - (void)enable3DAudio:(BOOL)enable;
