@@ -10,7 +10,7 @@ It is mandatory that you added:
 
 ## Installation
 
-    cordova plugin add @voxeet/cordova-plugin-voxeet@1.0.21
+    cordova plugin add https://github.com/voxeet/voxeet-cordova-conferencekit
 
 ### iOS
 
@@ -47,7 +47,9 @@ compile 'com.android.support:multidex:1.0.3'
 
 To enable push notification, follow the steps in the app, for push notification, follow https://github.com/voxeet/android-sdk-sample
 
-You also need to make a modification in the generated MainActivity. Using Android Studio or any other IDE :
+- **Verify that the Voxeet Push Notification services's tags are before the other services registered in the AndroidManifest with the proper priority to prevent Cordova's FCM issues**
+
+- You also need to make a modification in the generated MainActivity. Using Android Studio or any other IDE :
 
 right before the call to `super.onCreate(savedInstanceState);` :
 ```
@@ -59,6 +61,11 @@ getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
 ```
 
 This call use the following import : `import android.view.WindowManager;`
+
+- in order to implement properly the push notification, you also need to register the default accepted view **if you changed its name**. Edit the _AndroidManifest.xml_ file and put this xml node in the _<application></application>_ :
+```
+<meta-data android:name="rn_voxeet_incoming_call_accepted_or_declined" android:value="fully.qualified.package.name.to.the.default.cordova.activity" />
+```
 
 ## Implementation
 
