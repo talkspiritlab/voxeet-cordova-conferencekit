@@ -12,6 +12,8 @@ It is mandatory that you added:
 
     cordova plugin add https://github.com/voxeet/voxeet-cordova-conferencekit
 
+    By default the postinstall options will try to build the ios package. To skip the postinstall you can set env variable `VOXEET_SKIP_IOS_BUILD` to true. `export VOXEET_SKIP_IOS_BUILD=true`
+
 ### iOS
 
 - after `cordova platform add ios` in the project root folder
@@ -19,29 +21,10 @@ It is mandatory that you added:
 
 To enable push notification, follow https://github.com/voxeet/voxeet-ios-conferencekit#project-setup
 
+
 ### Android
 
-- after `cordova platform add android` in the project root folder
-- edit the `platforms/android/app/build.gradle` with:
-
-```
-android {
-    defaultConfig {
-        // Enabling multidex support.
-        multiDexEnabled true
-    }
-    dexOptions {
-        jumboMode true
-        incremental true
-        javaMaxHeapSize "4g"
-    }
-}
-```
-
-- as well as the dependencies block, put in the top dependency position:
-```
-compile 'com.android.support:multidex:1.0.3'
-```
+No steps are required
 
 ### Notification
 
@@ -78,10 +61,33 @@ You can use the Voxeet and UserInfo classes using the following :
     - constructor : `(externalId: string, name: string, avatarUrl: string)`
     - json() : return the corresponding json
 
-### Init
+### initialize without OAuth2
 
 ```
 Voxeet.initialize(<your consumer key>: string , <your secret key>: string)
+.then(() => {
+  //if the initialization is ok
+})
+.catch(err => {
+  //in case of error
+});
+```
+
+### initialize with OAuth2
+
+```
+//Voxeet.initializeWithRefresh(accessToken: string , refreshToken: () => Promise<boolean>)
+
+//the callback to be used
+const refreshToken = () => {
+  return new Promise((resolve, reject) => {
+    //here do your network call to get a new accessToken
+    //and do resolve(theAccessTokenValue);
+  });
+}
+
+//the actual call to the SDK initialization
+Voxeet.initializeWithRefresh("someValidAccessToken" , refreshToken)
 .then(() => {
   //if the initialization is ok
 })

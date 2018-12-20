@@ -1,8 +1,8 @@
 android {
     defaultConfig {
+        // Enabling multidex support.
         multiDexEnabled true
     }
-
     dexOptions {
         jumboMode true
         incremental true
@@ -10,7 +10,8 @@ android {
     }
 }
 dependencies {
-    compile ('com.voxeet.sdk:toolkit:1.1.8.38') {
+    compile 'com.android.support:multidex:1.0.3'
+    compile ('com.voxeet.sdk:toolkit:1.1.13') {
         transitive = true
     }
     compile 'com.android.support:multidex:1.0.1'
