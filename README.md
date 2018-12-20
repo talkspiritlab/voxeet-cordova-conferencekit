@@ -16,6 +16,7 @@ It is mandatory that you added:
 
 ### iOS
 
+- brew install carthage
 - after `cordova platform add ios` in the project root folder
 - set `ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES` in Xcode build settings to true
 
